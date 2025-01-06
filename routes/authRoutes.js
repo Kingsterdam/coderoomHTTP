@@ -1,0 +1,32 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
+const cors = require('cors');
+const session = require('express-session');  // Changed from cookie-session
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const redis = require('redis');
+require('dotenv').config();
+const passport = require('../googleStrategy');
+const router = express.Router();
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback', passport.authenticate('google', {
+    failureRedirect: '/auth/failure',
+    successRedirect: 'http://localhost:3000',
+}));
+router.get('/logout', (req, res) => {
+    req.logout((err) => {
+        if (err) return res.status(500).send({ error: err });
+        res.clearCookie('connect.sid');
+        res.status(200).send({ message: 'Logged out successfully' });
+    });
+});
+router.get('/status', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.send({ user: req.user });
+    } else {
+        res.status(401).send({ error: 'Not authenticated' });
+    }
+});
+
+module.exports = router;

@@ -9,10 +9,17 @@ const inviteRoutes = require('./routes/inviteRoutes');
 const session = require('express-session');
 require('./googleStrategy');
 const passport = require('passport');
+const { roomRouter } = require('./routes/room');
+const { Pool } = require('pg');
 
 require('dotenv').config();
 
 const app = express();
+
+// Database Configuration
+const pool = new Pool({
+    connectionString: 'postgresql://neondb_owner:7dsoJf6uXcQR@ep-bold-brook-a530htw6.us-east-2.aws.neon.tech/neondb?sslmode=require',
+});
 
 app.use(
     session({
@@ -25,6 +32,25 @@ app.use(
         }
     })
 );
+
+// Test Database Connection
+pool.connect()
+    .then(client => {
+        console.log('Connected to PostgreSQL');
+        client.release();
+    })
+    .catch(err => console.error('Database connection error:', err.stack));
+
+// Example Query (Optional, for Testing)
+app.get('/api/v1/test-db', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT NOW()'); // Example query to test connection
+        res.status(200).json({ message: 'Database connected successfully', time: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ message: 'Database query error', error: error.message });
+    }
+});
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -34,6 +60,7 @@ app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use('/auth', authRoutes);
 app.use('/code', codeRoutes);
 app.use('/send-invite', inviteRoutes);
+app.use('/api/v1/room', roomRouter);
 
 const PORT = 9090;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

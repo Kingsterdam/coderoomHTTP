@@ -9,6 +9,16 @@ require('dotenv').config();
 const passport = require('../googleStrategy');
 const router = express.Router();
 
+// Middleware to validate session and authenticate user
+function authenticateSession(req, res, next) {
+    if (req.isAuthenticated()) {
+        // If the session is valid and the user is authenticated
+        return next();
+    }
+    // If session is invalid or user is not authenticated, return error
+    res.status(401).json({ error: 'Not authenticated' });
+}
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', {
     failureRedirect: '/auth/failure',

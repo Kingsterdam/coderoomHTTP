@@ -1,9 +1,15 @@
 const express = require('express');
 const transporter = require('../transporter');
 const router = express.Router();
+const redisClient = require('../redisClient');
+
+
 
 router.post('/', async (req, res) => {
-    const { email, url } = req.body;
+    const { email, url, room } = req.body;
+    const token = await redisClient.get(`room:${room}`);
+    token_url = url + `?token=${token}`;
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -79,7 +85,7 @@ router.post('/', async (req, res) => {
                     <p>Hello,</p>
                     <p>You've been invited to join <strong>CodeRoom</strong>!</p>
                     <p>Click the button below to accept the invitation and start your journey with us:</p>
-                    <a href="${url}" class="button">Join CodeRoom</a>
+                    <a href="${token_url}" class="button">Join CodeRoom</a>
                 </div>
                 <div class="footer">
                     <p>&copy; 2024 CodeRoom. All rights reserved.</p>

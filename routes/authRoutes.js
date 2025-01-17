@@ -9,6 +9,7 @@ require('dotenv').config();
 const passport = require('../googleStrategy');
 const router = express.Router();
 
+
 // Middleware to validate session and authenticate user
 function authenticateSession(req, res, next) {
     if (req.isAuthenticated()) {

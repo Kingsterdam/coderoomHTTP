@@ -17,6 +17,12 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
 app.set('strict routing', true);
 // Database Configuration
 const pool = new Pool({
@@ -58,7 +64,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(bodyParser.json());
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 app.use('/auth', authRoutes);
 app.use('/code', codeRoutes);

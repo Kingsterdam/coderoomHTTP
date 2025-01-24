@@ -107,13 +107,36 @@ roomRouter.patch('/:room_id/decrement', async (req, res) => {
     }
 });
 
+roomRouter.post('/:room_id', async (req, res) => {
+    const { room_id } = req.params;
+    const user = req.body.userId;
+    console.log("user: ", user)
+    if (!user)
+        res.status(403).json({ message: "Give user" })
+    else if (!room_id)
+        res.status(403).json({ message: "Give user" })
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO room_participants (room_id, user_id) VALUES ($1, $2) RETURNING *;',
+            [room_id, user]
+        );
+        console.log("Inseing user in participant table....")
+        res.status(200).json({ message: `New participant ${user} added in the room ${room_id}` })
+    }
+    catch (error) {
+        console.log("issue posting the member in the room: ", error)
+    }
+})
+
+
 roomRouter.delete('/:room_id', async (req, res) => {
     const { room_id } = req.params;
 
     try {
         const result = await pool.query('DELETE FROM room WHERE room_id = $1 RETURNING *;', [room_id]);
         redisClient.del(`room:${room_id}`);
-        
+
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Room not found' });
         }
@@ -135,6 +158,7 @@ roomRouter.get('/:room_id', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 module.exports = {
     roomRouter,
 };

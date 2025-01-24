@@ -9,7 +9,7 @@ router.post('/', async (req, res) => {
     const { email, url, room } = req.body;
     const token = await redisClient.get(`room:${room}`);
     token_url = url + `?token=${token}`;
-
+    console.log("Send mail: ", email, url, room)
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,

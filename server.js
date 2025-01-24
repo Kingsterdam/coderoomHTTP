@@ -13,6 +13,7 @@ const { roomRouter } = require('./routes/room');
 const { messageRouter } = require('./routes/messageRouter');
 
 const { Pool } = require('pg');
+const profileRouter = require('./routes/profile');
 
 require('dotenv').config();
 
@@ -65,6 +66,7 @@ app.use('/code', codeRoutes);
 app.use('/send-invite', inviteRoutes);
 app.use('/api/messages', messageRouter);
 app.use('/api/v1/room', roomRouter);
+app.use('/profile', profileRouter)
 
 
 // Add this after all your routes in server.js

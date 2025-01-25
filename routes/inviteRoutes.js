@@ -4,11 +4,30 @@ const router = express.Router();
 const redisClient = require('../redisClient');
 
 
-
 router.post('/', async (req, res) => {
     const { email, url, room } = req.body;
+
+    // Check if all required fields are present
+    if (!email || !url || !room) {
+        return res.status(400).json({
+            error: 'Missing required fields',
+            details: {
+                email: !email ? 'Email is required' : null,
+                url: !url ? 'URL is required' : null,
+                room: !room ? 'Room is required' : null
+            }
+        });
+    }
+
+    // Get token from Redis
     const token = await redisClient.get(`room:${room}`);
-    token_url = url + `?token=${token}`;
+    if (!token) {
+        return res.status(404).json({
+            error: 'Room not found or expired'
+        });
+    }
+
+    const token_url = url + `?token=${token}`;
 
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -39,7 +58,7 @@ router.post('/', async (req, res) => {
                 }
 
                 .header {
-                    background-color: #38a169; /* Tailwind's bg-green-500 */
+                    background-color: #38a169;
                     color: white;
                     text-align: center;
                     padding: 15px;
@@ -47,7 +66,7 @@ router.post('/', async (req, res) => {
                 }
 
                 .button {
-                    background-color: #38a169; /* Tailwind's bg-green-500 */
+                    background-color: #38a169;
                     color: white;
                     font-size: 18px;
                     font-weight: bold;
@@ -60,11 +79,11 @@ router.post('/', async (req, res) => {
                 }
 
                 .button:hover {
-                    background-color: #2f855a; /* Tailwind's hover:bg-green-600 */
+                    background-color: #2f855a;
                 }
 
                 .footer {
-                    background-color: #f7fafc; /* Tailwind's bg-gray-200 */
+                    background-color: #f7fafc;
                     text-align: center;
                     padding: 10px;
                     border-radius: 0 0 10px 10px;
@@ -72,7 +91,7 @@ router.post('/', async (req, res) => {
 
                 .footer p {
                     font-size: 12px;
-                    color: #718096; /* Tailwind's text-gray-600 */
+                    color: #718096;
                 }
             </style>
         </head>
@@ -95,11 +114,34 @@ router.post('/', async (req, res) => {
         </html>
         `,
     };
+
     try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).send({ message: 'Invite sent successfully' });
+        // Attempt to send the email
+        const info = await transporter.sendMail(mailOptions);
+        
+        // Check if the email was actually sent
+        if (!info || !info.messageId) {
+            throw new Error('Failed to send email');
+        }
+
+        res.status(200).json({
+            message: 'Invite sent successfully',
+            messageId: info.messageId
+        });
     } catch (err) {
-        res.status(500).send({ error: err.message });
+        // Handle specific nodemailer errors
+        if (err.code === 'EENVELOPE' || err.code === 'ECONNECTION') {
+            return res.status(400).json({
+                error: 'Invalid email or email delivery failed',
+                details: err.message
+            });
+        }
+
+        // Handle other errors
+        res.status(500).json({
+            error: 'Failed to send invite',
+            details: err.message
+        });
     }
 });
 
